@@ -1,0 +1,80 @@
+# Home Region Subscription DataSource
+data "oci_identity_region_subscriptions" "home_region_subscriptions" {
+  tenancy_id = var.tenancy_ocid
+
+  filter {
+    name   = "is_home_region"
+    values = [true]
+  }
+}
+
+# ADs DataSource
+data "oci_identity_availability_domains" "ADs" {
+  compartment_id = var.tenancy_ocid
+}
+
+# Images DataSource
+data "oci_core_images" "OSImage" {
+  compartment_id           = var.compartment_ocid
+  operating_system         = var.instance_os
+  operating_system_version = var.linux_os_version
+  shape                    = var.Shape
+
+  filter {
+    name   = "display_name"
+    values = ["^.*Oracle[^G]*$"]
+    regex  = true
+  }
+}
+
+# Bastion Compute VNIC Attachment DataSource
+data "oci_core_vnic_attachments" "BastionServer_VNIC1_attach" {
+  availability_domain = var.availablity_domain_name == "" ? lookup(data.oci_identity_availability_domains.ADs.availability_domains[0], "name") : var.availablity_domain_name
+  compartment_id      = oci_identity_compartment.Terraform-Demo.id
+  instance_id         = oci_core_instance.BastionServer.id
+}
+
+# Bastion Compute VNIC DataSource
+data "oci_core_vnic" "BastionServer_VNIC1" {
+  vnic_id = data.oci_core_vnic_attachments.BastionServer_VNIC1_attach.vnic_attachments.0.vnic_id
+}
+
+# WebServer1 Compute VNIC Attachment DataSource
+data "oci_core_vnic_attachments" "Webserver1_VNIC1_attach" {
+  availability_domain = var.availablity_domain_name == "" ? lookup(data.oci_identity_availability_domains.ADs.availability_domains[0], "name") : var.availablity_domain_name
+  compartment_id      = oci_identity_compartment.Terraform-Demo.id
+  instance_id         = oci_core_instance.Webserver1.id
+}
+
+# WebServer1 Compute VNIC DataSource
+data "oci_core_vnic" "Webserver1_VNIC1" {
+  vnic_id = data.oci_core_vnic_attachments.Webserver1_VNIC1_attach.vnic_attachments.0.vnic_id
+}
+
+# WebServer2 Compute VNIC Attachment DataSource
+data "oci_core_vnic_attachments" "Webserver2_VNIC1_attach" {
+  availability_domain = var.availablity_domain_name == "" ? lookup(data.oci_identity_availability_domains.ADs.availability_domains[0], "name") : var.availablity_domain_name
+  compartment_id      = oci_identity_compartment.Terraform-Demo.id
+  instance_id         = oci_core_instance.Webserver2.id
+}
+
+# WebServer2 Compute VNIC DataSource
+data "oci_core_vnic" "Webserver2_VNIC1" {
+  vnic_id = data.oci_core_vnic_attachments.Webserver2_VNIC1_attach.vnic_attachments.0.vnic_id
+}
+
+# DBNodes DataSource
+data "oci_database_db_nodes" "DBNodeList" {
+  compartment_id = oci_identity_compartment.Terraform-Demo.id
+  db_system_id   = oci_database_db_system.DBSystem.id
+}
+
+# DBNodes Details DataSource
+data "oci_database_db_node" "DBNodeDetails" {
+  db_node_id = lookup(data.oci_database_db_nodes.DBNodeList.db_nodes[0], "id")
+}
+
+# DBNodes Details VNIC DataSource
+data "oci_core_vnic" "DBSystem_VNIC1" {
+  vnic_id = data.oci_database_db_node.DBNodeDetails.vnic_id
+}
