@@ -9,3 +9,5 @@
 terraform.rc
 
 .DS_Store
+
+setup_oci_tf_vars.sh
